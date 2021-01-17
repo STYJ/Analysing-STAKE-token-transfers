@@ -1,0 +1,9 @@
+numpy
+pandas
+dash
+plotly
+nbformat
+gunicorn
+statsmodels
+python-dotenv
+ipykernel
