@@ -7,3 +7,4 @@ gunicorn
 statsmodels
 python-dotenv
 ipykernel
+web3
