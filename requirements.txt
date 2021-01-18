@@ -8,3 +8,4 @@ statsmodels
 python-dotenv
 ipykernel
 web3
+py-solc

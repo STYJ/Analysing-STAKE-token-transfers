@@ -23,3 +23,20 @@ def get_latest_block(w3):
 
 w3 = connect_to_web3()
 print(get_latest_block(w3))
+
+
+{
+  "language": "Solidity",
+  "sources":
+  {
+    "IERC20.sol":
+    {
+      "urls":
+      [
+        "bzzr://56ab...",
+        "ipfs://Qma...",
+        "./contracts/IERC20.sol"
+      ]
+    },
+  },
+}
