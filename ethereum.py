@@ -76,13 +76,13 @@ def get_historical_transfers(w3, name, start=0, end=0):
         if(toBlock > endBlock):
             toBlock = endBlock
         print(fromBlock, toBlock)
-        fromBlock += interval
-        toBlock += interval
         event_filter = tokenInstance.events.Transfer.createFilter(
             fromBlock=fromBlock,
             toBlock=toBlock
         )
         txns.extend([extract_info(x) for x in event_filter.get_all_entries()])
+        fromBlock += interval
+        toBlock += interval
 
     save_to_csv(f'{name}_{start}_{end}.csv', txns)
 
