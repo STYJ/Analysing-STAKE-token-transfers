@@ -27,52 +27,65 @@ def connect_to_web3():
 def get_latest_block(w3):
     return w3.eth.blockNumber
 
+
 def get_erc20_abi():
     with open('contracts/IERC20.json') as f:
         return json.load(f)
 
+
 def get_token_instance(w3, name):
-    address=td.get(name.lower(), False)
+    address = td.get(name.lower(), False)
     if address:
-        address=address.get('address')
+        address = address.get('address')
         abi = get_erc20_abi()
         return w3.eth.contract(address=address, abi=abi)
     else:
         print(f'"{name}" is not a valid token symbol')
         exit(1)
 
-# TODO: Maybe next time you don't have to save as CSV.
-# Just parse directly with pandas
-# TODO: Should also include block number in file name
+
 def save_to_csv(nameOfFile, data):
-    with open(nameOfFile, 'w', encoding='utf8', newline='') as output_file:
+    with open(nameOfFile, 'a', encoding='utf8', newline='') as output_file:
         fc = csv.DictWriter(output_file, fieldnames=data[0].keys())
         fc.writeheader()
         fc.writerows(data)
 
 
+def extract_info(txn):
+    retVal = dict(txn.args)
+    retVal['block'] = txn.blockNumber
+    return retVal
+
+def get_historical_transfers(w3, name, start=0, end=0):
+    tokenInstance = get_token_instance(w3, name)
+    details = td.get(name.lower())
+    interval = details.get('interval')
+
+    if not start:
+        start = details.get('start')
+
+    if not end:
+        end = get_latest_block(w3) - 15
+
+    fromBlock = start
+    endBlock = end
+    toBlock = fromBlock + interval
+    txns = []
+
+    while fromBlock < endBlock:
+        if(toBlock > endBlock):
+            toBlock = endBlock
+        print(fromBlock, toBlock)
+        fromBlock += interval
+        toBlock += interval
+        event_filter = tokenInstance.events.Transfer.createFilter(
+            fromBlock=fromBlock,
+            toBlock=toBlock
+        )
+        txns.extend([extract_info(x) for x in event_filter.get_all_entries()])
+
+    save_to_csv(f'{name}_{start}_{end}.csv', txns)
 
 
 w3 = connect_to_web3()
-tokenName = 'stake'
-tokenInstance = get_token_instance(w3, tokenName)
-decimals = 10 ** tokenInstance.functions.decimals().call()
-# fromBlock = td.get(tokenName.lower()).get('start')
-# toBlock = get_latest_block(w3)
-fromBlock = 11685382
-toBlock = 11685500
-
-event_filter = tokenInstance.events.Transfer.createFilter(
-    fromBlock=fromBlock,
-    toBlock=toBlock
-)
-
-txns = [x.args for x in event_filter.get_all_entries()]
-df = pd.DataFrame(txns)
-print(df.head())
-
-# save_to_csv('txns.csv', txns)
-
-
-
-# print(get_latest_block(w3))
+# get_historical_transfers(w3, 'stake')
