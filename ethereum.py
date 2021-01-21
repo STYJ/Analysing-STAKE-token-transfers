@@ -71,8 +71,7 @@ def get_transfers(instance, from_block, to_block):
     return [extract_info(x) for x in event_filter.get_all_entries()]
 
 
-def get_all_transfers(w3, name, end=0, is_new=False):
-    token_instance = get_token_instance(w3, name)
+def get_historical_txns(w3, name, contract, path, query_function, end=0, is_new=False):
     details = td.get(name)
     interval = details.get('interval')
 
@@ -80,7 +79,7 @@ def get_all_transfers(w3, name, end=0, is_new=False):
     # Else get the start block from event_details.py
     start = 0
     if not is_new:
-        start = int(get_last_block('./stake/transfers.csv') + 1)
+        start = int(get_last_block(path) + 1)
     else:
         start = details.get('start')
 
@@ -97,12 +96,17 @@ def get_all_transfers(w3, name, end=0, is_new=False):
         if(to_block > end_block):
             to_block = end_block
         print(from_block, to_block)
-        txns.extend(get_transfers(token_instance, from_block, to_block))
+        txns.extend(query_function(contract, from_block, to_block))
         from_block += interval
         to_block += interval
 
-    save_to_csv('./stake/transfers.csv', txns, write_header=is_new)
+    save_to_csv(path, txns, write_header=is_new)
 
 
 w3 = connect_to_web3()
-get_all_transfers(w3, 'stake')
+token_instance = get_token_instance(w3, 'stake')
+get_historical_txns(w3=w3,
+                    name='stake',
+                    contract=token_instance,
+                    path='./stake/transfers.csv',
+                    query_function=get_transfers)
