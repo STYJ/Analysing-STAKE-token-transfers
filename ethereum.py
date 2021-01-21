@@ -44,10 +44,16 @@ def get_token_instance(w3, name):
         exit(1)
 
 
-def save_to_csv(nameOfFile, data):
-    with open(nameOfFile, 'a', encoding='utf8', newline='') as output_file:
+def get_last_block(name_of_file):
+    df = pd.read_csv(name_of_file)
+    return df.at[df.index[-1], 'block']
+
+
+def save_to_csv(name_of_file, data, write_header=False):
+    with open(name_of_file, 'a', encoding='utf8', newline='') as output_file:
         fc = csv.DictWriter(output_file, fieldnames=data[0].keys())
-        fc.writeheader()
+        if write_header:
+            fc.writeheader()
         fc.writerows(data)
 
 
@@ -56,36 +62,47 @@ def extract_info(txn):
     retVal['block'] = txn.blockNumber
     return retVal
 
-def get_historical_transfers(w3, name, start=0, end=0):
-    tokenInstance = get_token_instance(w3, name)
-    details = td.get(name.lower())
+
+def get_transfers(instance, from_block, to_block):
+    event_filter = instance.events.Transfer.createFilter(
+        fromBlock=from_block,
+        toBlock=to_block
+    )
+    return [extract_info(x) for x in event_filter.get_all_entries()]
+
+
+def get_all_transfers(w3, name, end=0, is_new=False):
+    token_instance = get_token_instance(w3, name)
+    details = td.get(name)
     interval = details.get('interval')
 
-    if not start:
+    # If file is not new, get the latest row and extract the last block.
+    # Else get the start block from event_details.py
+    start = 0
+    if not is_new:
+        start = int(get_last_block('./stake/transfers.csv') + 1)
+    else:
         start = details.get('start')
 
+    # Check if end block is provided.
     if not end:
         end = get_latest_block(w3) - 15
 
-    fromBlock = start
-    endBlock = end
-    toBlock = fromBlock + interval
+    from_block = start
+    end_block = end
+    to_block = from_block + interval
     txns = []
 
-    while fromBlock < endBlock:
-        if(toBlock > endBlock):
-            toBlock = endBlock
-        print(fromBlock, toBlock)
-        event_filter = tokenInstance.events.Transfer.createFilter(
-            fromBlock=fromBlock,
-            toBlock=toBlock
-        )
-        txns.extend([extract_info(x) for x in event_filter.get_all_entries()])
-        fromBlock += interval
-        toBlock += interval
+    while from_block < end_block:
+        if(to_block > end_block):
+            to_block = end_block
+        print(from_block, to_block)
+        txns.extend(get_transfers(token_instance, from_block, to_block))
+        from_block += interval
+        to_block += interval
 
-    save_to_csv(f'{name}_{start}_{end}.csv', txns)
+    save_to_csv('./stake/transfers.csv', txns, write_header=is_new)
 
 
 w3 = connect_to_web3()
-# get_historical_transfers(w3, 'stake')
+get_all_transfers(w3, 'stake')
