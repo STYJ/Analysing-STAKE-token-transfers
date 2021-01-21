@@ -15,7 +15,7 @@ TOKEN_DETAILS = {
         'uniswap': {
             'address': '0x3B3d4EeFDc603b232907a7f3d0Ed1Eea5C62b5f7',
             'start': 10113195,
-            'interval': 100000,
+            'interval': 50000,
             'event_name': ['Mint', 'Burn'],
         },
     }
