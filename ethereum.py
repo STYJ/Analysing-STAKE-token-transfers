@@ -107,45 +107,28 @@ token_details = td.get(token_name)
 #                     event_name=token_details.get('erc20').get('event_name'),
 #                     interval=token_details.get('erc20').get('interval'))
 
-# abi = get_abi('BPool.json')
-# address = token_details.get('balancer').get('address')
-# instance = get_contract_instance(w3, address, abi)
-
-# get_historical_txns(w3=w3,
-#                     name=token_name,
-#                     contract=instance,
-#                     path='./stake/join_balancer.csv',
-#                     event_name=token_details.get('balancer').get('event_name')[0],
-#                     interval=token_details.get('balancer').get('interval'),
-#                     is_new=False)
-
-
-# get_historical_txns(w3=w3,
-#                     name=token_name,
-#                     contract=instance,
-#                     path='./stake/exit_balancer.csv',
-#                     event_name=token_details.get('balancer').get('event_name')[1],
-#                     start=token_details.get('balancer').get('start'),
-#                     interval=token_details.get('balancer').get('interval'),
-#                     is_new=True)
-                    
-abi = get_abi('UniswapV2Pair.json')
-address = token_details.get('uniswap').get('address')
+abi = get_abi('BPool.json')
+address = token_details.get('balancer').get('address')
 instance = get_contract_instance(w3, address, abi)
 
-for e in token_details.get('uniswap').get('event_name'):
+for e in token_details.get('balancer').get('event_name'):
     get_historical_txns(w3=w3,
                         name=token_name,
                         contract=instance,
-                        path=f'./stake/{e.lower()}_uniswap.csv',
-                        event_name=e,
-                        interval=token_details.get('uniswap').get('interval'))
+                        path=f'./stake/{e.lower()}_balancer.csv',
+                        event_name=token_details.get('balancer').get('event_name')[0],
+                        start=token_details.get('balancer').get('start'),
+                        interval=token_details.get('balancer').get('interval'),
+                        is_new=True)
+                    
+# abi = get_abi('UniswapV2Pair.json')
+# address = token_details.get('uniswap').get('address')
+# instance = get_contract_instance(w3, address, abi)
 
-# get_historical_txns(w3=w3,
-#                     name=token_name,
-#                     contract=instance,
-#                     path='./stake/burn_uniswap.csv',
-#                     event_name=token_details.get('uniswap').get('event_name')[1],
-#                     start=token_details.get('uniswap').get('start'),
-#                     interval=token_details.get('uniswap').get('interval'),
-#                     is_new=True)
+# for e in token_details.get('uniswap').get('event_name'):
+#     get_historical_txns(w3=w3,
+#                         name=token_name,
+#                         contract=instance,
+#                         path=f'./stake/{e.lower()}_uniswap.csv',
+#                         event_name=e,
+#                         interval=token_details.get('uniswap').get('interval'))
