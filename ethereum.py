@@ -9,12 +9,12 @@ import pandas as pd
 # Environtment variables
 load_dotenv()
 
-# Infura Path
-PATH = 'wss://mainnet.infura.io/ws/v3/'
+# ALCHEMY Path
+PATH = 'wss://eth-mainnet.ws.alchemyapi.io/v2/'
 
 
 def connect_to_web3():
-    KEY = os.getenv("INFURA_KEY")
+    KEY = os.getenv("ALCHEMY_KEY")
     w3 = Web3(Web3.WebsocketProvider(PATH + KEY))
     try:
         w3.isConnected()
@@ -52,6 +52,7 @@ def save_to_csv(name_of_file, data, write_header=False):
 def extract_info(txn):
     retVal = dict(txn.args)
     retVal['block'] = txn.blockNumber
+    retVal['tx_hash'] = txn.transactionHash.hex()
     return retVal
 
 def get_events(instance, event_name, from_block, to_block):
@@ -64,7 +65,7 @@ def get_events(instance, event_name, from_block, to_block):
 
 # When you want to query historical transactions for the first time, you should specify
 # the start_block and is_new = true
-def get_historical_txns(w3, name, contract, path, event_name, start=0, end=0, interval=1000, is_new=False):
+def get_historical_txns(w3, contract, path, event_name, start=0, end=0, interval=1000, is_new=False):
 
     # If file is not new, get the latest row and extract the last block.
     if not is_new:
@@ -96,39 +97,23 @@ w3 = connect_to_web3()
 token_name = 'stake'
 token_details = td.get(token_name)
 
-# abi = get_abi('IERC20.json')
-# address = token_details.get('erc20').get('address')
-# instance = get_contract_instance(w3, address, abi)
+abi = get_abi('IERC20.json')
 
-# get_historical_txns(w3=w3,
-#                     name=token_name,
-#                     contract=instance,
-#                     path='./stake/transfers.csv',
-#                     event_name=token_details.get('erc20').get('event_name'),
-#                     interval=token_details.get('erc20').get('interval'))
-
-abi = get_abi('BPool.json')
-address = token_details.get('balancer').get('address')
-instance = get_contract_instance(w3, address, abi)
-
-for e in token_details.get('balancer').get('event_name'):
+for k, v in token_details.items():
+    address = v.get('address')
+    instance = get_contract_instance(w3, address, abi)
+    print(f'Getting {k} transfer events')
+    # get_historical_txns(w3=w3,
+    #                     contract=instance,
+    #                     path=f'./stake/{k}_transfers.csv',
+    #                     event_name='Transfer',
+    #                     interval=v.get('interval'))
+    # If you want to create all .csv from scratch
     get_historical_txns(w3=w3,
-                        name=token_name,
                         contract=instance,
-                        path=f'./stake/{e.lower()}_balancer.csv',
-                        event_name=token_details.get('balancer').get('event_name')[0],
-                        start=token_details.get('balancer').get('start'),
-                        interval=token_details.get('balancer').get('interval'),
+                        path=f'./stake/{k}_transfers.csv',
+                        start=v.get('start'),
+                        event_name='Transfer',
+                        interval=v.get('interval'),
                         is_new=True)
-                    
-# abi = get_abi('UniswapV2Pair.json')
-# address = token_details.get('uniswap').get('address')
-# instance = get_contract_instance(w3, address, abi)
-
-# for e in token_details.get('uniswap').get('event_name'):
-#     get_historical_txns(w3=w3,
-#                         name=token_name,
-#                         contract=instance,
-#                         path=f'./stake/{e.lower()}_uniswap.csv',
-#                         event_name=e,
-#                         interval=token_details.get('uniswap').get('interval'))
+    print('done')
