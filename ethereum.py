@@ -103,17 +103,17 @@ for k, v in token_details.items():
     address = v.get('address')
     instance = get_contract_instance(w3, address, abi)
     print(f'Getting {k} transfer events')
-    # get_historical_txns(w3=w3,
-    #                     contract=instance,
-    #                     path=f'./stake/{k}_transfers.csv',
-    #                     event_name='Transfer',
-    #                     interval=v.get('interval'))
-    # If you want to create all .csv from scratch
     get_historical_txns(w3=w3,
                         contract=instance,
                         path=f'./stake/{k}_transfers.csv',
-                        start=v.get('start'),
                         event_name='Transfer',
-                        interval=v.get('interval'),
-                        is_new=True)
+                        interval=v.get('interval'))
+    # If you want to create all .csv from scratch
+    # get_historical_txns(w3=w3,
+    #                     contract=instance,
+    #                     path=f'./stake/{k}_transfers.csv',
+    #                     start=v.get('start'),
+    #                     event_name='Transfer',
+    #                     interval=v.get('interval'),
+    #                     is_new=True)
     print('done')
