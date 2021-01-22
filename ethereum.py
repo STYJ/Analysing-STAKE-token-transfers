@@ -115,8 +115,9 @@ for k, v in token_details.items():
                         interval=v.get('interval'))
 
     balances.append({'who': k,
+                     'address': address,
                      'qty': get_token_balance(token_instance, address),
-                     'address': address})
+                     'total_supply': instance.functions.totalSupply().call()})
     # If you want to create all .csv from scratch
     # get_historical_txns(w3=w3,
     #                     contract=instance,
@@ -128,5 +129,4 @@ for k, v in token_details.items():
     print('done')
 
 # If balances.csv does not exist, you need to use 'a' instead of 'w'
-# and specify write_header=True
-save_to_csv('./stake/balances.csv', 'w', balances, write_header=False)
+save_to_csv('./stake/balances.csv', 'w', balances, write_header=True)
