@@ -41,8 +41,8 @@ def get_last_block(name_of_file):
     return df.at[df.index[-1], 'block']
 
 
-def save_to_csv(name_of_file, data, write_header=False):
-    with open(name_of_file, 'a', encoding='utf8', newline='') as output_file:
+def save_to_csv(name_of_file, mode, data, write_header=False):
+    with open(name_of_file, mode, encoding='utf8', newline='') as output_file:
         fc = csv.DictWriter(output_file, fieldnames=data[0].keys())
         if write_header:
             fc.writeheader()
@@ -62,6 +62,8 @@ def get_events(instance, event_name, from_block, to_block):
     )
     return [extract_info(x) for x in event_filter.get_all_entries()]
 
+def get_token_balance(instance, address):
+    return instance.functions.balanceOf(address).call()
 
 # When you want to query historical transactions for the first time, you should specify
 # the start_block and is_new = true
@@ -89,7 +91,7 @@ def get_historical_txns(w3, contract, path, event_name, start=0, end=0, interval
         to_block += interval
 
     if len(txns) > 0:
-        save_to_csv(path, txns, write_header=is_new)
+        save_to_csv(path, 'a', txns, write_header=is_new)
 
 
 w3 = connect_to_web3()
@@ -98,6 +100,9 @@ token_name = 'stake'
 token_details = td.get(token_name)
 
 abi = get_abi('IERC20.json')
+token_address = token_details.get('token').get('address')
+token_instance = get_contract_instance(w3, token_address, abi)
+balances = []
 
 for k, v in token_details.items():
     address = v.get('address')
@@ -108,6 +113,10 @@ for k, v in token_details.items():
                         path=f'./stake/{k}_transfers.csv',
                         event_name='Transfer',
                         interval=v.get('interval'))
+
+    balances.append({'who': k,
+                     'qty': get_token_balance(token_instance, address),
+                     'address': address})
     # If you want to create all .csv from scratch
     # get_historical_txns(w3=w3,
     #                     contract=instance,
@@ -117,3 +126,7 @@ for k, v in token_details.items():
     #                     interval=v.get('interval'),
     #                     is_new=True)
     print('done')
+
+# If balances.csv does not exist, you need to use 'a' instead of 'w'
+# and specify write_header=True
+save_to_csv('./stake/balances.csv', 'w', balances, write_header=False)
