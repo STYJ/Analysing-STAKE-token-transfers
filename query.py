@@ -128,4 +128,4 @@ for blockchain,v in td.items():
         print('done')
 
 # If balances.csv does not exist, you need to use 'a' instead of 'w'
-save_to_csv('./stake/contract_balances.csv', 'a', balances, write_header=True)
+save_to_csv('./stake/contract_balances.csv', 'w', balances, write_header=True)
