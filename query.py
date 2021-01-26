@@ -3,19 +3,16 @@ from dotenv import load_dotenv
 import os
 import json
 from constants import TOKEN_DETAILS as td
+from constants import PATHS
 import csv
 import pandas as pd
+import time
 
 # Environtment variables
 load_dotenv()
 
-# ALCHEMY Path
-PATH = 'wss://eth-mainnet.ws.alchemyapi.io/v2/'
-
-
-def connect_to_web3():
-    KEY = os.getenv("ALCHEMY_KEY")
-    w3 = Web3(Web3.WebsocketProvider(PATH + KEY))
+def connect_to_web3(path):
+    w3 = Web3(Web3.WebsocketProvider(path, websocket_timeout=60))
     try:
         w3.isConnected()
         return w3
@@ -94,39 +91,41 @@ def get_historical_txns(w3, contract, path, event_name, start=0, end=0, interval
         save_to_csv(path, 'a', txns, write_header=is_new)
 
 
-w3 = connect_to_web3()
+for blockchain,v in td.items():
+    w3 = connect_to_web3(PATHS.get(blockchain))
+    token_name = 'stake'
+    token_details = td.get(blockchain).get(token_name)
 
-token_name = 'stake'
-token_details = td.get(token_name)
+    abi = get_abi('IERC20.json')
+    token_address = token_details.get('token').get('address')
+    token_instance = get_contract_instance(w3, token_address, abi)
+    balances = []
 
-abi = get_abi('IERC20.json')
-token_address = token_details.get('token').get('address')
-token_instance = get_contract_instance(w3, token_address, abi)
-balances = []
+    for k, v in token_details.items():
+        address = v.get('address')
+        instance = get_contract_instance(w3, address, abi)
+        print(f'Getting {k} transfer events')
+        get_historical_txns(w3=w3,
+                            contract=instance,
+                            path=f'./stake/{blockchain}_{k}_transfers.csv',
+                            event_name='Transfer',
+                            interval=v.get('interval'))
 
-for k, v in token_details.items():
-    address = v.get('address')
-    instance = get_contract_instance(w3, address, abi)
-    print(f'Getting {k} transfer events')
-    get_historical_txns(w3=w3,
-                        contract=instance,
-                        path=f'./stake/{k}_transfers.csv',
-                        event_name='Transfer',
-                        interval=v.get('interval'))
+        # If you want to create all .csv from scratch, comment out the above 5 lines
+        # and uncomment the bottom 7 lines
+        # get_historical_txns(w3=w3,
+        #                     contract=instance,
+        #                     path=f'./stake/{blockchain}_{k}_transfers.csv',
+        #                     start=v.get('start'),
+        #                     event_name='Transfer',
+        #                     interval=v.get('interval'),
+        #                     is_new=True)
 
-    balances.append({'who': k,
-                     'address': address,
-                     'qty': get_token_balance(token_instance, address),
-                     'total_supply': instance.functions.totalSupply().call()})
-    # If you want to create all .csv from scratch
-    # get_historical_txns(w3=w3,
-    #                     contract=instance,
-    #                     path=f'./stake/{k}_transfers.csv',
-    #                     start=v.get('start'),
-    #                     event_name='Transfer',
-    #                     interval=v.get('interval'),
-    #                     is_new=True)
-    print('done')
+        balances.append({'who': k,
+                        'address': address,
+                        'qty': get_token_balance(token_instance, address),
+                        'total_supply': instance.functions.totalSupply().call()})
+        print('done')
 
 # If balances.csv does not exist, you need to use 'a' instead of 'w'
-save_to_csv('./stake/balances.csv', 'w', balances, write_header=True)
+save_to_csv('./stake/ethereum_balances.csv', 'w', balances, write_header=True)
