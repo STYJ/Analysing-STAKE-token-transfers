@@ -91,16 +91,16 @@ def get_historical_txns(w3, contract, path, event_name, start=0, end=0, interval
         save_to_csv(path, 'a', txns, write_header=is_new)
 
 balances = []
-for blockchain,v in td.items():
+for blockchain, v in td.items():
     w3 = connect_to_web3(PATHS.get(blockchain))
     token_name = 'stake'
-    token_details = td.get(blockchain).get(token_name)
+    details = v.get(token_name)
 
     abi = get_abi('IERC20.json')
-    token_address = token_details.get('token').get('address')
+    token_address = details.get('token').get('address')
     token_instance = get_contract_instance(w3, token_address, abi)
 
-    for k, v in token_details.items():
+    for k, v in details.items():
         address = v.get('address')
         instance = get_contract_instance(w3, address, abi)
         print(f'Getting {k} transfer events on {blockchain}')
